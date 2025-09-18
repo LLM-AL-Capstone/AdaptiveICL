@@ -26,7 +26,13 @@ class MetaICLModel(object):
         self.args = args
 
         if self.local_rank == -1:
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            # Prefer CUDA, then MPS (macOS), else CPU
+            if torch.cuda.is_available():
+                device = torch.device("cuda")
+            elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+                device = torch.device("mps")
+            else:
+                device = torch.device("cpu")
             n_gpu = torch.cuda.device_count()
             ws = 1
         else:  # distributed mode
@@ -82,19 +88,19 @@ class MetaICLModel(object):
             elif '13B' in self.args.model_name:
                 model_name = "/home/ubuntu/llama_models/13B_hf"
             from transformers import LlamaForCausalLM
-            model = LlamaForCausalLM.from_pretrained(model_name, device_map='auto')
+            model = LlamaForCausalLM.from_pretrained(model_name)
 
         elif 'falcon' in self.args.model_name:
             if '7B' in self.args.model_name:
                 model_name = "tiiuae/falcon-7b"
             elif '40B' in self.args.model_name:
                 model_name = "tiiuae/falcon-40b"
-            model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True, device_map='auto')
+            model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
 
         elif 'mosaic' in self.args.model_name:
             if '7B' in self.args.model_name:
                 model_name = 'mosaicml/mpt-7b'
-            model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True, device_map='auto')
+            model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
 
         elif 'gpt' in self.args.model_name:
 
@@ -107,12 +113,17 @@ class MetaICLModel(object):
             elif self.args.model_name == 'gpt-neox':
                 model_name = "EleutherAI/gpt-neox-20b"
 
+            elif self.args.model_name == 'gpt2':
+                model_name = 'gpt2'
+
             else:
                 model_name = 'EleutherAI/gpt-j-6B'
             
-            model = AutoModelForCausalLM.from_pretrained(model_name, device_map='auto')
+            model = AutoModelForCausalLM.from_pretrained(model_name)
         self.model_name = model_name
         self.model = model
+        # Move model to selected device
+        self.to_device()
 
     def save(self, step):
         if self.local_rank <= 0:
@@ -243,13 +254,13 @@ class MetaICLModel(object):
         losses = []
 
         for batch in dataloader:
-            input_ids=batch[0].cuda()
-            attention_mask=batch[1].cuda()
-            token_type_ids=batch[2].cuda()
+            input_ids=batch[0].to(self.device)
+            attention_mask=batch[1].to(self.device)
+            token_type_ids=batch[2].to(self.device)
             if len(batch)==3:
                 labels=None
             else:
-                labels=batch[3].cuda()
+                labels=batch[3].to(self.device)
             with torch.no_grad():
                 loss = self.run_model(input_ids, attention_mask, token_type_ids, labels=labels)
             
