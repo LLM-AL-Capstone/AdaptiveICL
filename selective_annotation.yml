@@ -29,19 +29,16 @@ dependencies:
 
   # Optional: better OpenMP for macOS (ignored on Linux/Windows)
   - llvm-openmp
-
   - pip:
       # Hugging Face ecosystem
-    - transformers==4.30.1
-    - datasets>=2.14
+      - transformers==4.30.1
+      - datasets>=2.14
       - accelerate==0.20.3
       - huggingface-hub==0.15.1
       - safetensors==0.3.1
       - sentence-transformers==2.2.2
-
       # Misc
       - openai==0.27.8
       - protobuf==3.20.2
-
-      # PyTorch CPU/MPS build (no CUDA suffix for macOS)
+      # PyTorch CPU/MPS build (pip wheel includes MPS support on macOS; omit cuda)
       - torch==2.1.2
