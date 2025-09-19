@@ -1,8 +1,6 @@
 
 ## Quick macOS (Apple Silicon) setup
 
-## Quick macOS (Apple Silicon) setup
-
 Notes for macOS (Apple Silicon):
 - I have Updated the environment to be cross-platform and Apple Silicon–friendly. The original installation steps (by the author) has Linux-specific pins, so remove the partial env and recreate it using the updated `selective_annotation.yml`. (Follow steps below)
 - The environment now uses Python 3.10 and installs PyTorch without CUDA (Metal/MPS will be used on macOS).
